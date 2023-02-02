@@ -60,7 +60,7 @@ local dependencies = {
     },
     helicopters = { Heli = true }, -- heli is included in free vehicles
     motorcycles = { Volt = true }, -- volt type is "custom" but works the same as a motorcycle
-    free_vehicles = { Camaro = false },
+    free_vehicles = { Camaro = true },
     unsupported_vehicles = { SWATVan = true },
     door_positions = { }    
 };
@@ -89,8 +89,7 @@ function utilities:get_nearest_vehicle(tried) -- unoptimized
             local vehicle = action.ValidRoot;
 
             if not table.find(tried, vehicle) and workspace.VehicleSpawns:FindFirstChild(vehicle.Name) then
-                if not dependencies.unsupported_vehicles[vehicle.Name] and (dependencies.modules.store._state.garage
-                .Vehicles[vehicle.Name] or dependencies.free_vehicles[vehicle.Name]) and not vehicle.Seat.Player.Value then -- check if the vehicle is supported, owned and not already occupied
+                if not dependencies.unsupported_vehicles[vehicle.Name] and (dependencies.modules.store._state.garageOwned.Vehicles[vehicle.Name] or dependencies.free_vehicles[vehicle.Name]) and not vehicle.Seat.Player.Value then -- check if the vehicle is supported, owned and not already occupied
                     if not workspace:Raycast(vehicle.Seat.Position, dependencies.variables.up_vector, dependencies.variables.raycast_params) then
                         local magnitude = (vehicle.Seat.Position - player.Character.HumanoidRootPart.Position).Magnitude; 
 
@@ -166,7 +165,7 @@ function movement:move_to_position(part, cframe, speed, car, target_vehicle, tri
         task.wait(0.5);
     end;
     
-    local y_level = 2000;
+    local y_level = 500;
     local higher_position = Vector3.new(vector_position.X, y_level, vector_position.Z); -- 500 studs above target position
 
     repeat -- use velocity to move towards the target position
@@ -230,7 +229,7 @@ end;
 
 --// get all positions near a door which have no collision above them
 
-for index, value in next, workspace:GetChildren() do
+for index, value in next, workspace:GetDescendants() do
     if value.Name:sub(-4, -1) == "Door" then 
         local touch_part = value:FindFirstChild("Touch");
 
@@ -332,19 +331,7 @@ local function teleport(cframe, tried) -- unoptimized
                 end;
             end;
 
-            local vehicle_root_part; -- inline conditional would be way too long
-
-            if dependencies.helicopters[vehicle_object.Name] then -- each type of vehicle has a different root part, which is why we sort them so we can do this
-                vehicle_root_part = vehicle_object.Model.TopDisc;
-            elseif dependencies.motorcycles[vehicle_object.Name] then 
-                vehicle_root_part = vehicle_object.CameraVehicleSeat;
-            elseif vehicle_object.Name == "DuneBuggy" then 
-                vehicle_root_part = vehicle_object.BoundingBox;
-            else 
-                vehicle_root_part = vehicle_object.PrimaryPart;
-            end;
-
-            movement:move_to_position(vehicle_root_part, cframe, dependencies.variables.vehicle_speed, true);
+            movement:move_to_position(vehicle_object.Engine, cframe, dependencies.variables.vehicle_speed, true);
 
             repeat -- attempt to exit car
                 task.wait(0.15);
@@ -360,4 +347,3 @@ local function teleport(cframe, tried) -- unoptimized
 end;
 
 return teleport;
-
